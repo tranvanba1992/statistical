@@ -8,6 +8,6 @@
     <title>Demo module</title>
 </head>
 <body>
-<h2>This is the first module of series about Laravel</h2>
+	<h2>This is the first module of series about Laravel</h2>
 </body>
 </html>
