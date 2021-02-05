@@ -12,7 +12,7 @@ class StatisticalController extends Controller
      */
     public function getIndex()
     {
-        dd(2222222);
+        dd(333);
         Statistical::create(['name' => 'Statistical ' . time()]);
         return view('toh-statistical::index');
     }
