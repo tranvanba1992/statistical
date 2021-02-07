@@ -85,8 +85,8 @@ class StatisticalController
         return round($data/7);
     }
     
-    public function getInfoGitPullNearest(Request $request){
-        $root_folder = str_replace($_SERVER["DOCUMENT_ROOT"], "public/", "");
+    public function getInfoGitPullNearest(){
+        $root_folder = str_replace("public", "", $_SERVER["DOCUMENT_ROOT"]);
         $data = exec('cd '. $root_folder .' && stat -c %y .git/FETCH_HEAD', $output);
         
         if (strlen($data) > 2) {
