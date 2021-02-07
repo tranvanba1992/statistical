@@ -13,7 +13,7 @@ class StatisticalController
         dd(2);
     }
 
-    public function statistical(){
+    public function countVisited(){
     	$date_current = strtotime(date('Y-m-d H:i:s'));
         // ======START Đếm lượt visited======
         Cache::rememberForever('cache_visited', function () {
