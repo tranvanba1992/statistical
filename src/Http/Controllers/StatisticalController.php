@@ -9,18 +9,37 @@ use Cache;
 class StatisticalController
 {
     public function getIndex(){
-    	// dd($_SERVER["DOCUMENT_ROOT"]);
+        // dd($_SERVER["DOCUMENT_ROOT"]);
         dd(2);
     }
 
     public function countVisited(){
-    	$date_current = strtotime(date('Y-m-d H:i:s'));
-        // ======START Đếm lượt visited======
-        Cache::rememberForever('cache_visited', function () {
+        $laravel = app();
+        $version = $laravel::VERSION;
+        $version = explode('.', $version);
+
+        if (count($version) >= 2) {
+            $version = $version[0].$version[1];
+        } else {
+            $version = $version[0];
+        }
+        
+        $timeout_cache = 24*60*60;
+
+        if ((int)$version <= 57) {
+            $timeout_cache = 24*60;
+        }
+
+        $day_current = date('Y-m-d');
+        $date_current = date('Y-m-d H:i:s');
+        $cache_visited_by_ip_day_current = 'cache_visited_by_ip_' . $day_current;
+
+        Cache::remember($cache_visited_by_ip_day_current, $timeout_cache, function () {
             return [];
         });
 
-        $cache_visited = Cache::get('cache_visited');
+        $cache_visited_by_ip = Cache::get($cache_visited_by_ip_day_current);
+        
 
         if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
                   $_SERVER['REMOTE_ADDR'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
@@ -39,15 +58,22 @@ class StatisticalController
             $ip = $remote;
         }
 
-        foreach ($cache_visited as $value) {
-			$datediff = $date_current - strtotime($value['created_at']);
-
-        	if ($value['ip'] == $ip && ($datediff / (60 * 60 * 24)) >=1 ) {
-	            $cache_visited[]= ['created_at' => date('Y-m-d H:i:s'), 'ip' => $ip];
-	            Cache::put('cache_visited', $cache_visited, 14400); // 10*24*60 = 10 ngày
-	            break;
-        	}
+        if (!in_array($ip, $cache_visited_by_ip)) {
+            Statistical::insert(['created_at' => $date_current, 'ip' => $ip]);
+            $cache_visited_by_ip[]= $ip;
+            Cache::put($cache_visited_by_ip_day_current, $cache_visited_by_ip, $timeout_cache); 
+            // $datediff= strtotime(date('Y-m-d') . ' 23:59:59') - strtotime(date('Y-m-d H:i:s'));
         }
+
+   //      foreach ($cache_visited_by_ip as $value) {
+            // $datediff = strtotime(date('Y-m-d H:i:s')) - strtotime($value['created_at']);
+
+   //       if ($value['ip'] == $ip && ($datediff / (60 * 60 * 24)) >=1 ) {
+      //           $cache_visited_by_ip[]= ['created_at' => date('Y-m-d H:i:s'), 'ip' => $ip];
+      //           Cache::put('cache_visited_by_ip', $cache_visited_by_ip, 14400); // 10*24*60 = 10 ngày
+      //           break;
+   //       }
+   //      }
     }
 
     public function getStatistical7DayNearest(){
@@ -60,7 +86,7 @@ class StatisticalController
     }
     
     public function getInfoGitPullNearest(Request $request){
-    	$root_folder = str_replace($_SERVER["DOCUMENT_ROOT"], "public/", "");
+        $root_folder = str_replace($_SERVER["DOCUMENT_ROOT"], "public/", "");
         $data = exec('cd '. $root_folder .' && stat -c %y .git/FETCH_HEAD', $output);
         
         if (strlen($data) > 2) {
@@ -71,12 +97,12 @@ class StatisticalController
     }
 
     public function saveVisitedWebsite(){
-        if (Cache::has('cache_visited')) {
-            $cache_visited = Cache::get('cache_visited');
+        if (Cache::has('cache_visited_by_ip')) {
+            $cache_visited_by_ip = Cache::get('cache_visited_by_ip');
             
-            if (count($cache_visited) > 0) {
-                Statistical::insert($cache_visited);
-                Cache::forget('cache_visited');
+            if (count($cache_visited_by_ip) > 0) {
+                Statistical::insert($cache_visited_by_ip);
+                Cache::forget('cache_visited_by_ip');
             } else {
                 echo 'empty';
             }
