@@ -16,14 +16,7 @@ class StatisticalController
     public function countVisited(){
         $laravel = app();
         $version = $laravel::VERSION;
-        $version = explode('.', $version);
-
-        if (count($version) >= 2) {
-            $version = $version[0].$version[1];
-        } else {
-            $version = $version[0];
-        }
-        
+        $version = str_replace(".", "", $version);
         $timeout_cache = 24*60*60;
 
         if ((int)$version <= 57) {
